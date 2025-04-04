@@ -1,0 +1,206 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #dadada;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header */
+.header {
+  background-color: #d0c9c9;
+  padding: 15px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 18px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Layout Container */
+.main-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: #efe6e6;
+  padding: 20px;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar h4 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.menu-item {
+  background-color: #f5edf7;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.menu-item span:first-child {
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.menu-title {
+  font-weight: 600;
+}
+
+.menu-desc {
+  font-size: 13px;
+  color: #666;
+}
+
+/* Main Content */
+.content {
+  flex: 1;
+  padding: 40px;
+  background-color: #dadada;
+  overflow-y: auto;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 30px;
+  background-color: #dadada;
+}
+
+.title {
+  text-align: center;
+  font-size: 30px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.button {
+  background-color: #69569d;
+  color: white;
+  padding: 10px 20px;
+  margin: 10px 10px 20px 0;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.test-list {
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #f5edf7;
+  border-radius: 16px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+}
+
+.test-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f6f0fa;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.test-card strong {
+  font-size: 16px;
+}
+
+.subhead {
+  font-size: 13px;
+  color: #666;
+}
+
+.icon {
+  background-color: #f2edf9;
+  border: none;
+  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+}
+
+.settings {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f1e8eb;
+  border-radius: 10px;
+}
+
+.settings label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+}
+
+.test-output {
+  background: white;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 20px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.file-option {
+  display: flex;
+  align-items: center;
+  background-color: #d8c9c9;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin: 10px 0;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  width: fit-content;
+  min-width: 220px;
+}
+
+.file-option input[type="radio"] {
+  margin-right: 12px;
+  transform: scale(1.2);
+  accent-color: #4b3f72;
+}

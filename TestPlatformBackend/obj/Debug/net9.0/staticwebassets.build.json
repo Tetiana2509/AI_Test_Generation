@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "lyLsh26Y5hZAOLsGjI9wDvOnqwcbKp4higBMXTA9n2g=",
+  "Source": "TestPlatformBackend",
+  "BasePath": "_content/TestPlatformBackend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
