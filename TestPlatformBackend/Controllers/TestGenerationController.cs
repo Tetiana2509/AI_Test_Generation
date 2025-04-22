@@ -55,24 +55,34 @@ public class TestGenerationController : ControllerBase
         var fileName = $"{request.Name}.txt";
         var filePath = Path.Combine("SavedTests", fileName);
 
-        // Убедись, что папка SavedTests существует
         Directory.CreateDirectory("SavedTests");
 
-        // Сохраняем файл на диск
         await System.IO.File.WriteAllTextAsync(filePath, request.Content);
 
-        // Сохраняем запись в базу данных
-        var savedTest = new SavedTest
-        {
-            TestName = request.Name,
-            FilePath = filePath
-        };
 
-        _context.Tests.Add(savedTest);
+        var existingTest = await _context.Tests
+            .FirstOrDefaultAsync(t => t.TestName == request.Name);
+
+        if (existingTest != null)
+        {
+            existingTest.FilePath = filePath;
+            _context.Tests.Update(existingTest);
+        }
+        else
+        {
+            var savedTest = new SavedTest
+            {
+                TestName = request.Name,
+                FilePath = filePath
+            };
+            _context.Tests.Add(savedTest);
+        }
+
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Тест сохранен", name = request.Name });
     }
+
 
     [HttpGet("saved")]
     public async Task<IActionResult> GetSavedTests()
@@ -81,11 +91,29 @@ public class TestGenerationController : ControllerBase
         return Ok(tests);
     }
 
+    [HttpDelete("delete/{name}")]
+    public async Task<IActionResult> DeleteTest(string name)
+    {
+        var test = await _context.Tests.FirstOrDefaultAsync(t => t.TestName == name);
+        if (test == null)
+            return NotFound("Тест не найден");
+
+        if (System.IO.File.Exists(test.FilePath))
+        {
+            System.IO.File.Delete(test.FilePath);
+        }
+
+        _context.Tests.Remove(test);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Тест удален", name });
+    }
+
+
 
 }
 
 
-// Класс для параметров запроса
 public class TestRequest
 {
     public string? Text { get; set; } 
