@@ -1,0 +1,76 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using System.IO;
+using System.Threading.Tasks;
+using TestPlatformBackend.Data;
+using TestPlatformBackend.Models;
+using Microsoft.EntityFrameworkCore;
+
+[Route("api/dictionary-generation")]
+[ApiController]
+public class DictionaryGenerationController : ControllerBase
+{
+    private readonly DictionaryGenerator _dictionaryGenerator;
+    private readonly AppDbContext _context;
+    private readonly string _uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+
+    public DictionaryGenerationController(AppDbContext context)
+    {
+        _dictionaryGenerator = new DictionaryGenerator("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");
+        _context = context;
+        if (!Directory.Exists(_uploadPath))
+            Directory.CreateDirectory(_uploadPath);
+    }
+
+    [HttpPost("generate")]
+    public async Task<IActionResult> GenerateDictionary([FromBody] DictionaryRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Text))
+            return BadRequest(new { message = "Текст не может быть пустым!" });
+
+        string result = await _dictionaryGenerator.GenerateDictionaryFromText(request.Text);
+        return Ok(new { message = "Словарь сгенерирован", dictionary = result });
+    }
+
+    [HttpPost("save")]
+    public async Task<IActionResult> SaveDictionary([FromBody] SaveDictionaryRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Content))
+            return BadRequest("Имя или содержание словаря не может быть пустым");
+
+        var fileName = $"{request.Name}.txt";
+        var filePath = Path.Combine("SavedDictionaries", fileName);
+
+        Directory.CreateDirectory("SavedDictionaries");
+
+        await System.IO.File.WriteAllTextAsync(filePath, request.Content);
+
+        var savedDictionary = new SavedDictionary
+        {
+            DictionaryName = request.Name,
+            FilePath = filePath
+        };
+
+        _context.Dictionaries.Add(savedDictionary);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Словарь сохранен", name = request.Name });
+    }
+
+    [HttpGet("saved")]
+    public async Task<IActionResult> GetSavedDictionaries()
+    {
+        var dictionaries = await _context.Dictionaries.ToListAsync();
+        return Ok(dictionaries);
+    }
+}
+
+public class DictionaryRequest
+{
+    public string? Text { get; set; }
+}
+
+public class SaveDictionaryRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+}
