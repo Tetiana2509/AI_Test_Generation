@@ -1,1 +1,49 @@
+####################################
+# Для Visual Studio (C#/.NET)
+####################################
+# Папки сборки
+/bin/
+/obj/
+
+# Служебные папки
 .vs/
+
+# Файлы пользователей Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Результаты тестов
+TestResults/
+
+# Логи
+*.log
+
+# Файлы сборки
+*.dll
+*.exe
+*.pdb
+*.cache
+*.mdb
+
+# Пакеты NuGet
+*.nupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# Покрытие кода
+*.dotCover
+
+####################################
+# Для Visual Studio Code
+####################################
+.vscode/
+*.code-workspace
+
+####################################
+# Системные файлы
+####################################
+Thumbs.db
+.DS_Store

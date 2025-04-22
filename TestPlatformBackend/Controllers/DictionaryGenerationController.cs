@@ -25,17 +25,17 @@ public class DictionaryGenerationController : ControllerBase
     public async Task<IActionResult> GenerateDictionary([FromBody] DictionaryRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Text))
-            return BadRequest(new { message = "Текст не может быть пустым!" });
+            return BadRequest(new { message = "Текст не може бути порожнім!" });
 
         string result = await _dictionaryGenerator.GenerateDictionaryFromText(request.Text);
-        return Ok(new { message = "Словарь сгенерирован", dictionary = result });
+        return Ok(new { message = "Словник згенеровано", dictionary = result });
     }
 
     [HttpPost("save")]
     public async Task<IActionResult> SaveDictionary([FromBody] SaveDictionaryRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Content))
-            return BadRequest("Имя или содержание словаря не может быть пустым");
+            return BadRequest("Назва або зміст словника не може бути порожнім");
 
         var fileName = $"{request.Name}.txt";
         var filePath = Path.Combine("SavedDictionaries", fileName);
@@ -64,9 +64,8 @@ public class DictionaryGenerationController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Словарь сохранен", name = request.Name });
+        return Ok(new { message = "Словник збережено", name = request.Name });
     }
-
 
     [HttpGet("saved")]
     public async Task<IActionResult> GetSavedDictionaries()
@@ -80,7 +79,7 @@ public class DictionaryGenerationController : ControllerBase
     {
         var dictionary = await _context.Dictionaries.FirstOrDefaultAsync(d => d.DictionaryName == name);
         if (dictionary == null)
-            return NotFound("Словарь не найден");
+            return NotFound("Словник не знайдено");
 
         if (System.IO.File.Exists(dictionary.FilePath))
         {
@@ -90,7 +89,7 @@ public class DictionaryGenerationController : ControllerBase
         _context.Dictionaries.Remove(dictionary);
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Словарь удален", name });
+        return Ok(new { message = "Словник видалено", name });
     }
 
 }
