@@ -52,6 +52,12 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/savedtests"
 });
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "SavedDictionaries")),
+    RequestPath = "/SavedDictionaries"
+});
 
 
 
