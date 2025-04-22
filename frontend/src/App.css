@@ -18,8 +18,9 @@ body {
 /* Layout Container */
 .main-container {
   display: flex;
-  height: 100vh;
+  min-height: calc(100vh - 60px); /* без фиксированной высоты! */
 }
+
 
 /* Sidebar */
 .sidebar {
@@ -66,7 +67,7 @@ body {
   flex: 1;
   padding: 40px;
   background-color: #dadada;
-  overflow-y: auto;
+  /*overflow-y: auto;*/
 }
 
 .container {
@@ -204,3 +205,64 @@ body {
   transform: scale(1.2);
   accent-color: #4b3f72;
 }
+
+
+.edit-textarea {
+  width: 100%;
+  height: 400px;
+  padding: 20px;
+  margin-top: 20px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  resize: vertical;
+}
+
+
+.footer {
+  background-color: #d0c9c9;
+  padding: 15px;
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+  margin-top: auto; /* чтобы футер всегда был внизу */
+  box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+}
+
+.success-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #4caf50;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  font-weight: bold;
+  z-index: 1000;
+  opacity: 0; /* Початково прозоре */
+  transform: translateY(-20px); /* Трохи вище */
+  animation: fadeInOut 2.5s forwards; /* Анімація на 2.5 сек */
+}
+
+/* Опис самої анімації */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
