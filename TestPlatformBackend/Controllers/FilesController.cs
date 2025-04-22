@@ -76,7 +76,6 @@ namespace TestPlatformBackend.Controllers
             return Ok(new { message = "Файл удален" });
         }
 
-        // 🔹 Удаление по ID
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFileByID(int id)
         {
@@ -93,7 +92,6 @@ namespace TestPlatformBackend.Controllers
             return Ok(new { message = "Файл удален" });
         }
 
-        // 🔹 Извлечение текста
         [HttpGet("extract-text/{fileName}")]
         public async Task<IActionResult> ExtractText(string fileName)
         {
@@ -119,7 +117,6 @@ namespace TestPlatformBackend.Controllers
             return Ok(new { text = extractedText });
         }
 
-        // Вспомогательный метод для PDF
         private string ExtractTextFromPdf(string filePath)
         {
             StringBuilder text = new StringBuilder();

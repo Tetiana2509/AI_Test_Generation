@@ -44,17 +44,29 @@ public class DictionaryGenerationController : ControllerBase
 
         await System.IO.File.WriteAllTextAsync(filePath, request.Content);
 
-        var savedDictionary = new SavedDictionary
-        {
-            DictionaryName = request.Name,
-            FilePath = filePath
-        };
+        var existingDictionary = await _context.Dictionaries
+            .FirstOrDefaultAsync(d => d.DictionaryName == request.Name);
 
-        _context.Dictionaries.Add(savedDictionary);
+        if (existingDictionary != null)
+        {
+            existingDictionary.FilePath = filePath;
+            _context.Dictionaries.Update(existingDictionary);
+        }
+        else
+        {
+            var savedDictionary = new SavedDictionary
+            {
+                DictionaryName = request.Name,
+                FilePath = filePath
+            };
+            _context.Dictionaries.Add(savedDictionary);
+        }
+
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Словарь сохранен", name = request.Name });
     }
+
 
     [HttpGet("saved")]
     public async Task<IActionResult> GetSavedDictionaries()
@@ -62,6 +74,25 @@ public class DictionaryGenerationController : ControllerBase
         var dictionaries = await _context.Dictionaries.ToListAsync();
         return Ok(dictionaries);
     }
+
+    [HttpDelete("delete/{name}")]
+    public async Task<IActionResult> DeleteDictionary(string name)
+    {
+        var dictionary = await _context.Dictionaries.FirstOrDefaultAsync(d => d.DictionaryName == name);
+        if (dictionary == null)
+            return NotFound("Словарь не найден");
+
+        if (System.IO.File.Exists(dictionary.FilePath))
+        {
+            System.IO.File.Delete(dictionary.FilePath);
+        }
+
+        _context.Dictionaries.Remove(dictionary);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Словарь удален", name });
+    }
+
 }
 
 public class DictionaryRequest
