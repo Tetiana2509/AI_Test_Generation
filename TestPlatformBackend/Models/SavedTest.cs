@@ -4,7 +4,7 @@ namespace TestPlatformBackend.Models
 {
     public class SavedTest
     {
-        public int Id { get; set; } // первичный ключ
+        public int Id { get; set; } 
         public string TestName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
     }

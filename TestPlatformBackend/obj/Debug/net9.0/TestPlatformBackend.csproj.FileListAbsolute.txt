@@ -529,3 +529,6 @@ C:\Users\Tanua\source\repos\Tetiana2509\AI_Test_Generation\TestPlatformBackend\o
 C:\Users\Tanua\source\repos\Tetiana2509\AI_Test_Generation\TestPlatformBackend\obj\Debug\net9.0\TestPlatformBackend.pdb
 C:\Users\Tanua\source\repos\Tetiana2509\AI_Test_Generation\TestPlatformBackend\obj\Debug\net9.0\TestPlatformBackend.genruntimeconfig.cache
 C:\Users\Tanua\source\repos\Tetiana2509\AI_Test_Generation\TestPlatformBackend\obj\Debug\net9.0\ref\TestPlatformBackend.dll
+C:\Users\Tanua\source\repos\Tetiana2509\AI_Test_Generation\TestPlatformBackend\bin\Debug\net9.0\DocumentFormat.OpenXml.dll
+C:\Users\Tanua\source\repos\Tetiana2509\AI_Test_Generation\TestPlatformBackend\bin\Debug\net9.0\DocumentFormat.OpenXml.Framework.dll
+C:\Users\Tanua\source\repos\Tetiana2509\AI_Test_Generation\TestPlatformBackend\bin\Debug\net9.0\System.IO.Packaging.dll
