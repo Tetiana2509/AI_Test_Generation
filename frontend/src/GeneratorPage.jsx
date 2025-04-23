@@ -7,31 +7,31 @@ function GeneratorPage({ onEdit }) {
   const [questionCount, setQuestionCount] = useState("");
   const [difficulty, setDifficulty] = useState("середній");
   const [testResult, setTestResult] = useState("");
+  const [dictionaryResult, setDictionaryResult] = useState(""); // для словника
   const [files, setFiles] = useState([]);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [savedTests, setSavedTests] = useState([]);
+  const [savedDictionaries, setSavedDictionaries] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [testName, setTestName] = useState("");
-
-  const [isGeneratingTest, setIsGeneratingTest] = useState(true); 
-  const [savedDictionaries, setSavedDictionaries] = useState([]); 
+  const [saveName, setSaveName] = useState("");
+  const [isSavingTest, setIsSavingTest] = useState(true); // ВАЖЛИВО для збереження
 
   useEffect(() => {
-    fetch("http://localhost:5048/api/files")
-      .then((res) => res.json())
-      .then((data) => setFiles(data))
-      .catch((error) => console.error("Ошибка загрузки файлов:", error));
-
-    fetch("http://localhost:5048/api/test-generation/saved")
-      .then((res) => res.json())
-      .then((data) => setSavedTests(data))
-      .catch((error) => console.error("Ошибка загрузки сохраненных тестов:", error));
-
-    fetch("http://localhost:5048/api/dictionary-generation/saved")
-      .then((res) => res.json())
-      .then((data) => setSavedDictionaries(data))
-      .catch((error) => console.error("Ошибка загрузки сохраненных словарей:", error));
+    fetchSavedFiles();
   }, []);
+
+  const fetchSavedFiles = async () => {
+    try {
+      const filesData = await fetch("http://localhost:5048/api/files").then(res => res.json());
+      setFiles(filesData);
+      const testsData = await fetch("http://localhost:5048/api/test-generation/saved").then(res => res.json());
+      setSavedTests(testsData);
+      const dictionariesData = await fetch("http://localhost:5048/api/dictionary-generation/saved").then(res => res.json());
+      setSavedDictionaries(dictionariesData);
+    } catch (error) {
+      console.error("Помилка завантаження даних:", error);
+    }
+  };
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -39,7 +39,7 @@ function GeneratorPage({ onEdit }) {
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      alert("Выберите файл!");
+      alert("Оберіть файл!");
       return;
     }
     const formData = new FormData();
@@ -51,11 +51,10 @@ function GeneratorPage({ onEdit }) {
     });
 
     if (response.ok) {
-      alert("Файл загружен!");
-      const updatedFiles = await fetch("http://localhost:5048/api/files").then((res) => res.json());
-      setFiles(updatedFiles);
+      alert("Файл завантажено!");
+      fetchSavedFiles();
     } else {
-      alert("Ошибка загрузки файла");
+      alert("Помилка завантаження файлу");
     }
   };
 
@@ -68,7 +67,7 @@ function GeneratorPage({ onEdit }) {
 
   const handleGenerateTest = async () => {
     if (!fileText || !questionCount) {
-      alert("Заполните все поля!");
+      alert("Заповніть усі поля!");
       return;
     }
 
@@ -88,7 +87,7 @@ function GeneratorPage({ onEdit }) {
 
   const handleGenerateDictionary = async () => {
     if (!fileText) {
-      alert("Выберите файл!");
+      alert("Оберіть файл!");
       return;
     }
 
@@ -99,78 +98,101 @@ function GeneratorPage({ onEdit }) {
     });
 
     const result = await response.json();
-    setTestResult(result.dictionary);
+    setDictionaryResult(result.dictionary);
   };
 
-  const handleSaveTest = async () => {
-    if (!testName || !testResult) return;
-
-    const endpoint = isGeneratingTest ? "test-generation" : "dictionary-generation";
+  const handleSave = async () => {
+    const endpoint = isSavingTest ? "test-generation" : "dictionary-generation";
+    const contentToSave = isSavingTest ? testResult : dictionaryResult;
 
     const response = await fetch(`http://localhost:5048/api/${endpoint}/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: testName, content: testResult }),
+      body: JSON.stringify({ name: saveName, content: contentToSave }),
     });
 
     if (response.ok) {
-      alert(isGeneratingTest ? "Тест сохранён!" : "Словарь сохранён!");
+      alert("Успішно збережено!");
       setShowModal(false);
-      setTestName("");
-
-      if (isGeneratingTest) {
-        const updated = await fetch("http://localhost:5048/api/test-generation/saved").then((res) => res.json());
-        setSavedTests(updated);
-      } else {
-        const updated = await fetch("http://localhost:5048/api/dictionary-generation/saved").then((res) => res.json());
-        setSavedDictionaries(updated);
-      }
+      setSaveName("");
+      fetchSavedFiles();
+    } else {
+      alert("Помилка при збереженні!");
     }
   };
 
-  const handleDownload = () => {
+  const handleDownloadTest = () => {
     const blob = new Blob([testResult], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = isGeneratingTest ? "generated_test.txt" : "generated_dictionary.txt";
+    link.download = "generated_test.txt";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadDictionary = () => {
+    const blob = new Blob([dictionaryResult], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "generated_dictionary.txt";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadSaved = async (name, type) => {
+    const endpoint = type === "tests" ? "savedtests" : "SavedDictionaries";
+    const url = `http://localhost:5048/${endpoint}/${encodeURIComponent(name)}.txt`;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Помилка завантаження файлу');
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${name}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+    } catch (error) {
+      console.error('Помилка при завантаженні файлу:', error);
+      alert('Не вдалося завантажити файл');
+    }
+  };
+
   const handleDeleteSaved = async (name, type) => {
-    const confirmDelete = window.confirm(`Вы уверены, что хотите удалить ${name}?`);
+    const confirmDelete = window.confirm(`Ви впевнені, що хочете видалити ${name}?`);
     if (!confirmDelete) return;
-  
+
     const endpoint = type === "tests" ? "test-generation" : "dictionary-generation";
-  
+
     try {
       const response = await fetch(`http://localhost:5048/api/${endpoint}/delete/${name}`, {
         method: "DELETE",
       });
-  
+
       if (response.ok) {
-        alert(`${type === "tests" ? "Тест" : "Словарь"} удалён!`);
-  
-        // Обновляем список после удаления
-        if (type === "tests") {
-          const updated = await fetch("http://localhost:5048/api/test-generation/saved").then(res => res.json());
-          setSavedTests(updated);
-        } else {
-          const updated = await fetch("http://localhost:5048/api/dictionary-generation/saved").then(res => res.json());
-          setSavedDictionaries(updated);
-        }
+        alert(`${type === "tests" ? "Тест" : "Словник"} видалено!`);
+        fetchSavedFiles();
       } else {
-        alert("Ошибка удаления");
+        alert("Помилка видалення");
       }
     } catch (error) {
-      console.error("Ошибка при удалении:", error);
-      alert("Ошибка удаления");
+      console.error("Помилка при видаленні:", error);
+      alert("Помилка видалення");
     }
   };
-  
 
   return (
     <div className="layout">
@@ -188,47 +210,46 @@ function GeneratorPage({ onEdit }) {
         <main className="content">
           <h1 className="title">Назва теми</h1>
 
-          <h2>Сохраненные тесты</h2>
-        <div className="test-list">
-        {savedTests.map((test) => (
-            <div className="test-card" key={test.id}>
-            <div>
-                <strong>{test.testName}</strong>
-                <div className="subhead">Subhead</div>
-            </div>
-            <div>
-                <button className="icon" onClick={() => handleDownloadSaved(test.testName, "tests")}>⬇️</button>
-                <button className="icon" onClick={() => onEdit({ name: test.testName, type: "tests" })}>✏️</button>
-                <button className="icon" onClick={() => handleDeleteSaved(test.testName, "tests")}>🗑️</button>
-            </div>
-            </div>
-        ))}
-        </div>
+          <h2>Збережені тести</h2>
+          <div className="test-list">
+            {savedTests.map((test) => (
+              <div className="test-card" key={test.id}>
+                <div>
+                  <strong>{test.testName}</strong>
+                  <div className="subhead">Subhead</div>
+                </div>
+                <div>
+                  <button className="icon" onClick={() => handleDownloadSaved(test.testName, "tests")}>⬇️</button>
+                  <button className="icon" onClick={() => onEdit({ name: test.testName, type: "tests" })}>✏️</button>
+                  <button className="icon" onClick={() => handleDeleteSaved(test.testName, "tests")}>🗑️</button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-        <h2>Сохраненные словари</h2>
-        <div className="test-list">
-        {savedDictionaries.map((dictionary) => (
-            <div className="test-card" key={dictionary.id}>
-            <div>
-                <strong>{dictionary.dictionaryName}</strong>
-                <div className="subhead">Subhead</div>
-            </div>
-            <div>
-                <button className="icon" onClick={() => handleDownloadSaved(dictionary.dictionaryName, "dictionaries")}>⬇️</button>
-                <button className="icon" onClick={() => onEdit({ name: dictionary.dictionaryName, type: "dictionaries" })}>✏️</button>
-                <button className="icon" onClick={() => handleDeleteSaved(dictionary.dictionaryName, "dictionaries")}>🗑️</button>
+          <h2>Збережені словники</h2>
+          <div className="test-list">
+            {savedDictionaries.map((dictionary) => (
+              <div className="test-card" key={dictionary.id}>
+                <div>
+                  <strong>{dictionary.dictionaryName}</strong>
+                  <div className="subhead">Subhead</div>
+                </div>
+                <div>
+                  <button className="icon" onClick={() => handleDownloadSaved(dictionary.dictionaryName, "dictionaries")}>⬇️</button>
+                  <button className="icon" onClick={() => onEdit({ name: dictionary.dictionaryName, type: "dictionaries" })}>✏️</button>
+                  <button className="icon" onClick={() => handleDeleteSaved(dictionary.dictionaryName, "dictionaries")}>🗑️</button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-            </div>
-            </div>
-        ))}
-        </div>
+          <h1 className="title">Менеджер файлів</h1>
 
-
-          <h3>Менеджер файлів</h3>
           <input type="file" onChange={handleFileChange} />
-          <button className="button" onClick={handleUpload}>Добавить файл</button>
+          <button className="button" onClick={handleUpload}>Додати файл</button>
 
-          <h4>Выберите файл:</h4>
+          <h4>Оберіть файл:</h4>
           {files.map((file) => (
             <div key={file.id} className="file-option">
               <input type="radio" name="file" onChange={() => handleSelectFile(file.fileName)} />
@@ -236,54 +257,83 @@ function GeneratorPage({ onEdit }) {
             </div>
           ))}
 
-          {fileText && (
-            <>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                <button className="button" onClick={() => { setIsGeneratingTest(true); handleGenerateTest(); }}>Тест Генерация</button>
-                <button className="button" onClick={() => { setIsGeneratingTest(false); handleGenerateDictionary(); }}>Генерация Словаря</button>
+          <section className="generator-section">
+            <h2>Генерація тесту</h2>
+            <button className="button" onClick={handleGenerateTest} disabled={!fileText}>Згенерувати тест</button>
+            <div className="settings">
+              <label>Кількість питань:
+                <input type="number" value={questionCount} onChange={(e) => setQuestionCount(e.target.value)} disabled={!fileText} />
+              </label>
+              <label>Рівень складності:
+                <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} disabled={!fileText}>
+                  <option value="простий">Простий</option>
+                  <option value="середній">Середній</option>
+                  <option value="складний">Складний</option>
+                </select>
+              </label>
+            </div>
+            {testResult && (
+              <div className="test-output">
+                <pre>{testResult}</pre>
               </div>
+            )}
+            
+            {testResult && (
+              <div className="actions">
+                <button
+                  className="button"
+                  onClick={() => {
+                    setIsSavingTest(true);
+                    setShowModal(true);
+                  }}
+                >
+                  Зберегти тест
+                </button>
+                <button className="button" onClick={handleDownloadTest}>
+                  Завантажити тест
+                </button>
+              </div>
+            )}
+          </section>
 
-              {isGeneratingTest && (
-                <div className="settings">
-                  <label>Кількість питань:
-                    <input type="number" value={questionCount} onChange={(e) => setQuestionCount(e.target.value)} />
-                  </label>
-                  <label>Рівень складності:
-                    <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-                      <option value="простий">Простий</option>
-                      <option value="середній">Середній</option>
-                      <option value="складний">Складний</option>
-                    </select>
-                  </label>
-                </div>
-              )}
-            </>
-          )}
+          <section className="generator-section">
+            <h2>Генерація словника</h2>
+            <button className="button" onClick={handleGenerateDictionary} disabled={!fileText}>Згенерувати словник</button>
+            {dictionaryResult && (
+              <div className="test-output">
+                <pre>{dictionaryResult}</pre>
+              </div>
+            )}
 
-          {testResult && (
-            <div className="test-output">
-              <pre>{testResult}</pre>
-            </div>
-          )}
-
-          {testResult && (
-            <div className="actions">
-              <button className="button" onClick={() => setShowModal(true)}>Сохранить</button>
-              <button className="button" onClick={handleDownload}>Скачать</button>
-            </div>
-          )}
+            {dictionaryResult && (
+              <div className="actions">
+                <button
+                  className="button"
+                  onClick={() => {
+                    setIsSavingTest(false);
+                    setShowModal(true);
+                  }}
+                >
+                  Зберегти словник
+                </button>
+                <button className="button" onClick={handleDownloadDictionary}>
+                  Завантажити словник
+                </button>
+              </div>
+            )}
+          </section>
 
           {showModal && (
             <div className="modal">
               <div className="modal-content">
-                <h3>Введите название {isGeneratingTest ? "теста" : "словаря"}</h3>
+                <h3>Введіть назву</h3>
                 <input
                   type="text"
-                  value={testName}
-                  onChange={(e) => setTestName(e.target.value)}
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
                 />
-                <button className="button" onClick={handleSaveTest}>Сохранить</button>
-                <button className="button" onClick={() => setShowModal(false)}>Отмена</button>
+                <button className="button" onClick={handleSave}>Зберегти</button>
+                <button className="button" onClick={() => setShowModal(false)}>Скасувати</button>
               </div>
             </div>
           )}
@@ -291,8 +341,7 @@ function GeneratorPage({ onEdit }) {
       </div>
       <footer className="footer">
         © 2025 AI Test Platform. All rights reserved.
-    </footer>
-
+      </footer>
     </div>
   );
 }
