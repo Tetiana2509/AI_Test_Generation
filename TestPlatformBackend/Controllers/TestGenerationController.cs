@@ -1,13 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using TestPlatformBackend.Data;
 using Microsoft.EntityFrameworkCore;
+using TestPlatformBackend.Data;
 using TestPlatformBackend.Models;
 using System.IO;
-using System.Text;
-using UglyToad.PdfPig;
-using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
-using UglyToad.PdfPig.Content;
+using System.Threading.Tasks;
 
 [Route("api/test-generation")]
 [ApiController]
@@ -15,7 +11,7 @@ public class TestGenerationController : ControllerBase
 {
     private readonly TestGenerator _testGenerator;
     private readonly AppDbContext _context;
-    private readonly string _uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+    private readonly string _uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "SavedTests");
 
     public TestGenerationController(AppDbContext context)
     {
@@ -37,8 +33,15 @@ public class TestGenerationController : ControllerBase
         if (!new[] { "простий", "середній", "складний" }.Contains(request.Difficulty?.ToLower()))
             return BadRequest(new { message = "Рівень складності має бути 'простий', 'середній' або 'складний'!" });
 
-        string result = await _testGenerator.GenerateTestFromText(request.Text, request.QuestionCount, request.Difficulty!);
-        return Ok(new { message = "Тест згенеровано", test = result });
+        try
+        {
+            string result = await _testGenerator.GenerateTestFromText(request.Text, request.QuestionCount, request.Difficulty!);
+            return Ok(new { message = "Тест згенеровано", test = result });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Помилка при генерації тесту", error = ex.Message });
+        }
     }
 
     [HttpPost("save")]
@@ -47,41 +50,39 @@ public class TestGenerationController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Content))
             return BadRequest("Назва або зміст тесту не може бути порожнім");
 
-        var fileName = $"{request.Name}.txt";
-        var filePath = Path.Combine("SavedTests", fileName);
+        if (!_context.Topics.Any(t => t.Id == request.TopicId))
+            return BadRequest("Тема не знайдена");
 
-        Directory.CreateDirectory("SavedTests");
+        var filePath = Path.Combine(_uploadPath, $"{request.Name}.txt");
 
         await System.IO.File.WriteAllTextAsync(filePath, request.Content);
 
-        var existingTest = await _context.Tests
-            .FirstOrDefaultAsync(t => t.TestName == request.Name);
-
-        if (existingTest != null)
+        var savedTest = new SavedTest
         {
-            existingTest.FilePath = filePath;
-            _context.Tests.Update(existingTest);
-        }
-        else
-        {
-            var savedTest = new SavedTest
-            {
-                TestName = request.Name,
-                FilePath = filePath
-            };
-            _context.Tests.Add(savedTest);
-        }
+            TestName = request.Name,
+            FilePath = filePath,
+            TopicId = request.TopicId
+        };
 
+        _context.Tests.Add(savedTest);
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Тест збережено", name = request.Name });
     }
 
-    [HttpGet("saved")]
-    public async Task<IActionResult> GetSavedTests()
+    [HttpPost("edit")]
+    public async Task<IActionResult> EditTest([FromBody] SaveTestRequest request)
     {
-        var tests = await _context.Tests.ToListAsync();
-        return Ok(tests);
+        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Content))
+            return BadRequest("Назва або зміст тесту не може бути порожнім");
+
+        var test = await _context.Tests.FirstOrDefaultAsync(t => t.TestName == request.Name);
+        if (test == null)
+            return NotFound("Тест не знайдено");
+
+        await System.IO.File.WriteAllTextAsync(test.FilePath, request.Content);
+
+        return Ok(new { message = "Тест оновлено", name = request.Name });
     }
 
     [HttpDelete("delete/{name}")]
@@ -101,6 +102,17 @@ public class TestGenerationController : ControllerBase
 
         return Ok(new { message = "Тест видалено", name });
     }
+
+    [HttpGet("saved/{topicId}")]
+    public async Task<IActionResult> GetSavedTests(int topicId)
+    {
+        var tests = await _context.Tests
+            .Where(t => t.TopicId == topicId)
+            .ToListAsync();
+
+        return Ok(tests);
+    }
+
 }
 
 public class TestRequest
@@ -114,4 +126,5 @@ public class SaveTestRequest
 {
     public string Name { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public int TopicId { get; set; }
 }

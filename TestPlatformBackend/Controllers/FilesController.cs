@@ -20,7 +20,7 @@ namespace TestPlatformBackend.Controllers
     public class FilesController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly string _uploadPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+        private readonly string _uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
 
         public FilesController(AppDbContext context)
         {
@@ -30,12 +30,15 @@ namespace TestPlatformBackend.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFile(IFormFile file)
+        public async Task<IActionResult> UploadFile([FromForm] IFormFile file, [FromForm] int topicId)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("Файл не завантажено");
 
-            var filePath = System.IO.Path.Combine(_uploadPath, file.FileName);
+            if (!_context.Topics.Any(t => t.Id == topicId))
+                return BadRequest("Тема не знайдена");
+
+            var filePath = Path.Combine(_uploadPath, file.FileName);
 
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
@@ -45,7 +48,8 @@ namespace TestPlatformBackend.Controllers
             var uploadedFile = new FileUpload
             {
                 FileName = file.FileName,
-                FilePath = filePath
+                FilePath = filePath,
+                TopicId = topicId
             };
 
             _context.Files.Add(uploadedFile);
@@ -54,10 +58,13 @@ namespace TestPlatformBackend.Controllers
             return Ok(new { message = "Файл завантажено", path = filePath });
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllFiles()
+        [HttpGet("by-topic/{topicId}")]
+        public async Task<IActionResult> GetFilesByTopic(int topicId)
         {
-            var files = await _context.Files.ToListAsync();
+            var files = await _context.Files
+                .Where(f => f.TopicId == topicId)
+                .ToListAsync();
+
             return Ok(files);
         }
 
@@ -77,26 +84,10 @@ namespace TestPlatformBackend.Controllers
             return Ok(new { message = "Файл видалено" });
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFileByID(int id)
-        {
-            var file = await _context.Files.FirstOrDefaultAsync(f => f.Id == id);
-            if (file == null)
-                return NotFound(new { message = "Файл не знайдено у базі даних" });
-
-            if (System.IO.File.Exists(file.FilePath))
-                System.IO.File.Delete(file.FilePath);
-
-            _context.Files.Remove(file);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Файл видалено" });
-        }
-
         [HttpGet("extract-text/{fileName}")]
         public async Task<IActionResult> ExtractText(string fileName)
         {
-            string filePath = System.IO.Path.Combine(_uploadPath, fileName);
+            string filePath = Path.Combine(_uploadPath, fileName);
             if (!System.IO.File.Exists(filePath))
                 return NotFound(new { message = "Файл не знайдено!" });
 

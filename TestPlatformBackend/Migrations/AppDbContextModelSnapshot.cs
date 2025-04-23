@@ -22,6 +22,23 @@ namespace TestPlatformBackend.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Course", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CourseName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Courses");
+                });
+
             modelBuilder.Entity("TestPlatformBackend.Models.FileUpload", b =>
                 {
                     b.Property<int>("Id")
@@ -36,6 +53,9 @@ namespace TestPlatformBackend.Migrations
                     b.Property<string>("FilePath")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("TopicId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("datetime2");
 
@@ -44,6 +64,8 @@ namespace TestPlatformBackend.Migrations
                     b.HasIndex("FileName")
                         .IsUnique()
                         .HasFilter("[FileName] IS NOT NULL");
+
+                    b.HasIndex("TopicId");
 
                     b.ToTable("Files");
                 });
@@ -64,7 +86,12 @@ namespace TestPlatformBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("TopicId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TopicId");
 
                     b.ToTable("Dictionaries");
                 });
@@ -85,9 +112,85 @@ namespace TestPlatformBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("TopicId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("TopicId");
+
                     b.ToTable("Tests");
+                });
+
+            modelBuilder.Entity("Topic", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TopicName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Topics");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.FileUpload", b =>
+                {
+                    b.HasOne("Topic", "Topic")
+                        .WithMany()
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.SavedDictionary", b =>
+                {
+                    b.HasOne("Topic", "Topic")
+                        .WithMany()
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.SavedTest", b =>
+                {
+                    b.HasOne("Topic", "Topic")
+                        .WithMany()
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("Topic", b =>
+                {
+                    b.HasOne("Course", "Course")
+                        .WithMany("Topics")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("Course", b =>
+                {
+                    b.Navigation("Topics");
                 });
 #pragma warning restore 612, 618
         }

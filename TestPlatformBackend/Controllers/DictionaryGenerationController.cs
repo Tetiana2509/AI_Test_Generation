@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.IO;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using TestPlatformBackend.Data;
 using TestPlatformBackend.Models;
-using Microsoft.EntityFrameworkCore;
+using System.IO;
+using System.Threading.Tasks;
 
 [Route("api/dictionary-generation")]
 [ApiController]
@@ -11,11 +11,11 @@ public class DictionaryGenerationController : ControllerBase
 {
     private readonly DictionaryGenerator _dictionaryGenerator;
     private readonly AppDbContext _context;
-    private readonly string _uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+    private readonly string _uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "SavedDictionaries");
 
     public DictionaryGenerationController(AppDbContext context)
     {
-        _dictionaryGenerator = new DictionaryGenerator("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");
+        _dictionaryGenerator = new DictionaryGenerator("твій-ключ-API");
         _context = context;
         if (!Directory.Exists(_uploadPath))
             Directory.CreateDirectory(_uploadPath);
@@ -24,11 +24,19 @@ public class DictionaryGenerationController : ControllerBase
     [HttpPost("generate")]
     public async Task<IActionResult> GenerateDictionary([FromBody] DictionaryRequest request)
     {
+
         if (string.IsNullOrWhiteSpace(request.Text))
             return BadRequest(new { message = "Текст не може бути порожнім!" });
 
-        string result = await _dictionaryGenerator.GenerateDictionaryFromText(request.Text);
-        return Ok(new { message = "Словник згенеровано", dictionary = result });
+        try
+        {
+            string result = await _dictionaryGenerator.GenerateDictionaryFromText(request.Text);
+            return Ok(new { message = "Словник згенеровано", dictionary = result });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Помилка при генерації словника", error = ex.Message });
+        }
     }
 
     [HttpPost("save")]
@@ -37,41 +45,39 @@ public class DictionaryGenerationController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Content))
             return BadRequest("Назва або зміст словника не може бути порожнім");
 
-        var fileName = $"{request.Name}.txt";
-        var filePath = Path.Combine("SavedDictionaries", fileName);
+        if (!_context.Topics.Any(t => t.Id == request.TopicId))
+            return BadRequest("Тема не знайдена");
 
-        Directory.CreateDirectory("SavedDictionaries");
+        var filePath = Path.Combine(_uploadPath, $"{request.Name}.txt");
 
         await System.IO.File.WriteAllTextAsync(filePath, request.Content);
 
-        var existingDictionary = await _context.Dictionaries
-            .FirstOrDefaultAsync(d => d.DictionaryName == request.Name);
-
-        if (existingDictionary != null)
+        var savedDictionary = new SavedDictionary
         {
-            existingDictionary.FilePath = filePath;
-            _context.Dictionaries.Update(existingDictionary);
-        }
-        else
-        {
-            var savedDictionary = new SavedDictionary
-            {
-                DictionaryName = request.Name,
-                FilePath = filePath
-            };
-            _context.Dictionaries.Add(savedDictionary);
-        }
+            DictionaryName = request.Name,
+            FilePath = filePath,
+            TopicId = request.TopicId
+        };
 
+        _context.Dictionaries.Add(savedDictionary);
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Словник збережено", name = request.Name });
     }
 
-    [HttpGet("saved")]
-    public async Task<IActionResult> GetSavedDictionaries()
+    [HttpPost("edit")]
+    public async Task<IActionResult> EditDictionary([FromBody] SaveDictionaryRequest request)
     {
-        var dictionaries = await _context.Dictionaries.ToListAsync();
-        return Ok(dictionaries);
+        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Content))
+            return BadRequest("Назва або зміст словника не може бути порожнім");
+
+        var dictionary = await _context.Dictionaries.FirstOrDefaultAsync(d => d.DictionaryName == request.Name);
+        if (dictionary == null)
+            return NotFound("Словник не знайдено");
+
+        await System.IO.File.WriteAllTextAsync(dictionary.FilePath, request.Content);
+
+        return Ok(new { message = "Словник оновлено", name = request.Name });
     }
 
     [HttpDelete("delete/{name}")]
@@ -92,6 +98,16 @@ public class DictionaryGenerationController : ControllerBase
         return Ok(new { message = "Словник видалено", name });
     }
 
+    [HttpGet("saved/{topicId}")]
+    public async Task<IActionResult> GetSavedDictionaries(int topicId)
+    {
+        var dictionaries = await _context.Dictionaries
+            .Where(d => d.TopicId == topicId)
+            .ToListAsync();
+
+        return Ok(dictionaries);
+    }
+
 }
 
 public class DictionaryRequest
@@ -103,4 +119,5 @@ public class SaveDictionaryRequest
 {
     public string Name { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public int TopicId { get; set; }
 }
