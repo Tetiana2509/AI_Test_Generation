@@ -4,7 +4,7 @@ import "./App.css";
 function EditPage({ fileName, fileType, onBack }) {
   const [content, setContent] = useState("");
   const [forceReload, setForceReload] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false); // нове для повідомлення
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false); 
 
   useEffect(() => {
     const url = fileType === "tests"
@@ -15,7 +15,7 @@ function EditPage({ fileName, fileType, onBack }) {
       .then((res) => res.text())
       .then((text) => setContent(text))
       .then(() => setForceReload(false))
-      .catch((error) => console.error("Ошибка загрузки файла для редактирования:", error));
+      .catch((error) => console.error("Помилка завантаження файлу для редагування:", error));
   }, [fileName, fileType, forceReload]);
 
   const handleSave = async () => {
@@ -37,11 +37,11 @@ function EditPage({ fileName, fileType, onBack }) {
           setShowSuccessMessage(false);
         }, 2000);
       } else {
-        alert("Ошибка при сохранении на сервере");
+        alert("Помилка при збереженні на сервері");
       }
     } catch (error) {
-      console.error("Ошибка при сохранении:", error);
-      alert("Ошибка при сохранении");
+      console.error("Помилка при збереженні:", error);
+      alert("Помилка при збереженні");
     }
   };
 
@@ -60,7 +60,7 @@ function EditPage({ fileName, fileType, onBack }) {
 
         <main className="content">
           <h1 className="title">
-            Редактирование {fileType === "tests" ? "Теста" : "Словаря"}
+            Редагування {fileType === "tests" ? "Тесту" : "Словника"}
           </h1>
 
           <textarea
@@ -71,13 +71,13 @@ function EditPage({ fileName, fileType, onBack }) {
 
           <div className="actions">
             <button className="button" onClick={onBack}>Назад</button>
-            <button className="button" onClick={handleSave}>Сохранить</button>
+            <button className="button" onClick={handleSave}>Зберегти</button>
           </div>
 
-          {/* Уведомление об успешном сохранении */}
+          {/* Сповіщення про успішне збереження */}
           {showSuccessMessage && (
             <div className="success-message">
-              ✅ Файл успешно сохранен!
+              ✅ Файл успішно збережено!
             </div>
           )}
         </main>
