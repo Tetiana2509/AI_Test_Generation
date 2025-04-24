@@ -10,6 +10,9 @@ namespace TestPlatformBackend.Data
         public DbSet<FileUpload> Files { get; set; }
         public DbSet<SavedTest> Tests { get; set; }
         public DbSet<SavedDictionary> Dictionaries { get; set; }
+        public DbSet<Course> Courses { get; set; }
+        public DbSet<Topic> Topics { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -8,6 +8,8 @@ namespace TestPlatformBackend.Models
         public string? FileName { get; set; }
         public string? FilePath { get; set; } 
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+        public int TopicId { get; set; }
+        public Topic? Topic { get; set; }
 
     }
 
