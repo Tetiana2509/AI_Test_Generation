@@ -19,20 +19,17 @@ function EditPage({ fileName, fileType, onBack }) {
   }, [fileName, fileType, forceReload]);
 
   const handleSave = async () => {
-    const endpoint = fileType === "tests" ? "test-generation" : "dictionary-generation";
-
+    const endpoint = fileType === "tests" ? "test-generation/edit" : "dictionary-generation/edit";
+  
     try {
-      const response = await fetch(`http://localhost:5048/api/${endpoint}/save`, {
+      const response = await fetch(`http://localhost:5048/api/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: fileName, content }),
       });
-
+  
       if (response.ok) {
-        setShowSuccessMessage(true); // Показуємо повідомлення
-        setForceReload(true); // Перезавантажуємо файл
-
-        // Сховати повідомлення через 2 секунди
+        setShowSuccessMessage(true);
         setTimeout(() => {
           setShowSuccessMessage(false);
         }, 2000);
@@ -44,6 +41,7 @@ function EditPage({ fileName, fileType, onBack }) {
       alert("Помилка при збереженні");
     }
   };
+  
 
   return (
     <div className="layout">
