@@ -24,6 +24,7 @@ public class DictionaryGenerationController : ControllerBase
     [HttpPost("generate")]
     public async Task<IActionResult> GenerateDictionary([FromBody] DictionaryRequest request)
     {
+
         if (string.IsNullOrWhiteSpace(request.Text))
             return BadRequest(new { message = "Текст не може бути порожнім!" });
 
