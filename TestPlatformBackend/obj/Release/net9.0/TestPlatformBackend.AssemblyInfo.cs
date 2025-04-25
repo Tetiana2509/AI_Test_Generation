@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TestPlatformBackend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7b451e97754d5d0bc0a23f8017ca6cadb69a325d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f2294ddfe1639663308a97ea8d7650824b869df1")]
 [assembly: System.Reflection.AssemblyProductAttribute("TestPlatformBackend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TestPlatformBackend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
