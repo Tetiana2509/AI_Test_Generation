@@ -10,7 +10,5 @@ namespace TestPlatformBackend.Models
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
         public int TopicId { get; set; }
         public Topic? Topic { get; set; }
-
     }
-
 }
