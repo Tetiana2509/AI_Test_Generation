@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using TestPlatformBackend.Data;
 using TestPlatformBackend.Models;
+using TestPlatformBackend.DTOs;
+
 
 namespace TestPlatformBackend.Controllers
 {
@@ -18,19 +20,27 @@ namespace TestPlatformBackend.Controllers
 
         // 🟢 Створення курсу викладачем
         [HttpPost]
-        public async Task<IActionResult> CreateCourse([FromBody] Course course)
+        public async Task<IActionResult> CreateCourse([FromBody] CreateCourseDto dto)
         {
-            if (string.IsNullOrWhiteSpace(course.CourseName))
+            if (string.IsNullOrWhiteSpace(dto.CourseName))
                 return BadRequest(new { message = "Назва курсу не може бути порожньою" });
 
-            var user = await _context.Users.FindAsync(course.CreatedByUserId);
+            var user = await _context.Users.FindAsync(dto.CreatedByUserId);
             if (user == null || user.Role != "Teacher")
                 return BadRequest("Недійсний викладач");
 
+            var course = new Course
+            {
+                CourseName = dto.CourseName,
+                CreatedByUserId = dto.CreatedByUserId
+            };
+
             _context.Courses.Add(course);
             await _context.SaveChangesAsync();
+
             return Ok(course);
         }
+
 
         // 🔵 Приєднання по ID курсу (код курсу)
         [HttpPost("join")]
@@ -94,6 +104,23 @@ namespace TestPlatformBackend.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { message = "Курс видалено", id });
         }
+
+        // 🔻 Вихід з курсу студентом
+        [HttpDelete("leave")]
+        public async Task<IActionResult> LeaveCourse(int userId, int courseId)
+        {
+            var record = await _context.CourseUsers
+                .FirstOrDefaultAsync(cu => cu.UserId == userId && cu.CourseId == courseId);
+
+            if (record == null)
+                return NotFound("Запис не знайдено");
+
+            _context.CourseUsers.Remove(record);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Ви покинули курс" });
+        }
+
     }
 
 }
