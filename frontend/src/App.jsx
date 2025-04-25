@@ -1,14 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CoursesPage from "./CoursesPage";
 import TopicsPage from "./TopicsPage";
 import GeneratorPage from "./GeneratorPage";
 import EditPage from "./EditPage";
+import LoginPage from "./LoginPage";
 import "./App.css";
 
 function App() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [editingFile, setEditingFile] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    setIsLoggedIn(!!userId);
+  }, []);
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.clear(); // або removeItem("userId") + removeItem("role")
+    setSelectedCourse(null);
+    setSelectedTopic(null);
+    setEditingFile(null);
+    setIsLoggedIn(false);
+  };
 
   const handleCourseSelect = (course) => {
     setSelectedCourse(course);
@@ -32,8 +51,16 @@ function App() {
     setEditingFile(null);
   };
 
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <>
+      <div style={{ position: "absolute", top: 10, right: 20 }}>
+        <button className="button" onClick={handleLogout}>🚪 Вийти</button>
+      </div>
+
       {editingFile ? (
         <EditPage
           fileName={editingFile.name}
