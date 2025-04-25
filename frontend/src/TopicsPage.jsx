@@ -86,9 +86,12 @@ function TopicsPage({ course, onBack, onSelectTopic }) {
             ← Назад до курсів
           </button>
 
-          <button className="button" onClick={() => setShowModal(true)}>
-            ➕ Створити тему
-          </button>
+          {localStorage.getItem("role") === "Teacher" && (
+            <button className="button" onClick={() => setShowModal(true)}>
+              ➕ Створити тему
+            </button>
+          )}
+
 
           <div className="test-list">
             {topics.map((topic) => (
@@ -100,12 +103,15 @@ function TopicsPage({ course, onBack, onSelectTopic }) {
                   <strong>{topic.topicName}</strong>
                   <div className="subhead">Subhead</div>
                 </div>
-                <button
-                  className="icon"
-                  onClick={() => handleDeleteTopic(topic.id)}
-                >
-                  🗑️
-                </button>
+                {localStorage.getItem("role") === "Teacher" && (
+                  <button
+                    className="icon"
+                    onClick={() => handleDeleteTopic(topic.id)}
+                  >
+                    🗑️
+                  </button>
+                )}
+
               </div>
             ))}
           </div>

@@ -260,8 +260,13 @@ function GeneratorPage({ topic, onEdit, onBack }) {
 
           <h1 className="title">Менеджер файлів</h1>
 
-          <input type="file" onChange={handleFileChange} />
-          <button className="button" onClick={handleUpload}>Додати файл</button>
+          {localStorage.getItem("role") === "Teacher" && (
+            <>
+              <input type="file" onChange={handleFileChange} />
+              <button className="button" onClick={handleUpload}>Додати файл</button>
+            </>
+          )}
+
 
           <h4>Оберіть файл:</h4>
           {files.map((file) => (
