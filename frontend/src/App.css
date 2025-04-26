@@ -8,7 +8,7 @@ body {
 /* Header */
 .header {
   background-color: #d0c9c9;
-  padding: 15px;
+  padding: 30px 15px; 
   text-align: center;
   font-weight: 600;
   font-size: 18px;

@@ -100,12 +100,15 @@ function TopicsPage({ course, onBack, onSelectTopic }) {
                   <strong>{topic.topicName}</strong>
                   <div className="subhead">Subhead</div>
                 </div>
-                <button
-                  className="icon"
-                  onClick={() => handleDeleteTopic(topic.id)}
-                >
-                  🗑️
-                </button>
+                {localStorage.getItem("role") === "Teacher" && (
+                  <button
+                    className="icon"
+                    onClick={() => handleDeleteTopic(topic.id)}
+                  >
+                    🗑️
+                  </button>
+                )}
+
               </div>
             ))}
           </div>
