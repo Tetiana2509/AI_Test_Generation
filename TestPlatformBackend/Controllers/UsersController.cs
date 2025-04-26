@@ -39,6 +39,19 @@ namespace TestPlatformBackend.Controllers
             return Ok(user);
         }
 
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == dto.Email && u.PasswordHash == dto.Password);
+
+            if (user == null)
+                return Unauthorized(new { message = "Невірний email або пароль" });
+
+            return Ok(new { user.Id, user.Role });
+        }
+
+
         // POST: api/Users/join-course
         [HttpPost("join-course")]
         public async Task<IActionResult> JoinCourse([FromBody] JoinCourseDto dto)
