@@ -14,6 +14,11 @@ namespace TestPlatformBackend.Data
         public DbSet<Topic> Topics { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<CourseUser> CourseUsers { get; set; }
+        public DbSet<FullTest> FullTests { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<AnswerOption> AnswerOptions { get; set; }
+        public DbSet<TestResult> TestResults { get; set; }
+
 
 
 
@@ -42,6 +47,33 @@ namespace TestPlatformBackend.Data
                 .HasForeignKey(c => c.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // При видаленні FullTest → видаляються всі питання
+            modelBuilder.Entity<FullTest>()
+                .HasMany(f => f.Questions)
+                .WithOne(q => q.FullTest)
+                .HasForeignKey(q => q.FullTestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // При видаленні Question → видаляються всі варіанти
+            modelBuilder.Entity<Question>()
+                .HasMany(q => q.AnswerOptions)
+                .WithOne(a => a.Question)
+                .HasForeignKey(a => a.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // При видаленні FullTest → видаляються результати студентів
+            modelBuilder.Entity<FullTest>()
+                .HasMany(f => f.TestResults)
+                .WithOne(r => r.FullTest)
+                .HasForeignKey(r => r.FullTestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // При видаленні User → видаляються його результати тестів 
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.TestResults)
+                .WithOne(r => r.User)
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             base.OnModelCreating(modelBuilder);
         }
