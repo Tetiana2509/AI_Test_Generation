@@ -101,7 +101,6 @@ function TopicsPage({ course, onBack, onSelectTopic }) {
                   onClick={() => onSelectTopic(topic)}
                 >
                   <strong>{topic.topicName}</strong>
-                  <div className="subhead">Subhead</div>
                 </div>
                 {localStorage.getItem("role") === "Teacher" && (
                   <button

@@ -5,6 +5,8 @@ import GeneratorPage from "./GeneratorPage";
 import EditPage from "./EditPage";
 import LoginPage from "./LoginPage";
 import TestEditorPage from "./TestEditorPage";
+import TestPassingPage from "./TestPassingPage";
+import TestHistoryPage from "./TestHistoryPage";
 import "./App.css";
 
 function App() {
@@ -14,6 +16,10 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [editingTestId, setEditingTestId] = useState(null);
   const [editingFullTest, setEditingFullTest] = useState(null);
+  const [passingTestId, setPassingTestId] = useState(null);
+  const [viewingTestIdForHistory, setViewingTestIdForHistory] = useState(null);
+
+
 
 
   useEffect(() => {
@@ -64,11 +70,22 @@ function App() {
       <div style={{ position: "absolute", top: 10, right: 20 }}>
         <button className="button" onClick={handleLogout}>🚪 Вийти</button>
       </div>
-
-      {editingFullTest ? (
+  
+      {passingTestId ? (
+        <TestPassingPage 
+          testId={passingTestId} 
+          onBack={() => setPassingTestId(null)}
+        />
+      ) : viewingTestIdForHistory ? (  // <<< НОВА ПЕРЕВІРКА
+        <TestHistoryPage
+          testId={viewingTestIdForHistory}
+          onBack={() => setViewingTestIdForHistory(null)}
+        />
+      ) : editingFullTest ? (
         <TestEditorPage
           test={editingFullTest}
           onBack={() => setEditingFullTest(null)}
+          onViewHistory={(testId) => setViewingTestIdForHistory(testId)} // <<< Додаємо
         />
       ) : editingFile ? (
         <EditPage
@@ -82,16 +99,14 @@ function App() {
           onEdit={(file) => setEditingFile(file)}
           onEditTest={(testObjectOrId) => {
             if (typeof testObjectOrId === "object") {
-              // мы передаём newTest сразу
               setEditingFullTest(testObjectOrId);
             } else {
-              // если это просто id — значит по кнопке ✏
               fetch(`http://localhost:5048/api/fulltests/${testObjectOrId}`)
                 .then(res => res.json())
                 .then(fullTest => setEditingFullTest(fullTest));
             }
           }}
-                              
+          onPassTest={(testId) => setPassingTestId(testId)}
           onBack={handleBackToTopics}
         />
       ) : selectedCourse ? (
@@ -105,6 +120,7 @@ function App() {
       )}
     </>
   );
+  
 }
 
 export default App;

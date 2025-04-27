@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
-function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
+function GeneratorPage({ topic, onEdit, onEditTest, onPassTest, onBack }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileText, setFileText] = useState("");
   const [questionCount, setQuestionCount] = useState("");
@@ -16,6 +16,8 @@ function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
   const [saveName, setSaveName] = useState("");
   const [isSavingTest, setIsSavingTest] = useState(true);
   const [fullTests, setFullTests] = useState([]);
+  const [studentScores, setStudentScores] = useState([]);
+
 
   useEffect(() => {
     if (topic) {
@@ -25,18 +27,51 @@ function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
 
   const fetchSavedFiles = async () => {
     try {
-      const filesData = await fetch(`http://localhost:5048/api/files/by-topic/${topic.id}`).then(res => res.json());
+      const safeJson = async (response) => {
+        try {
+          if (!response.ok) return [];
+          const text = await response.text();
+          return text ? JSON.parse(text) : [];
+        } catch {
+          return [];
+        }
+      };
+  
+      const filesResponse = await fetch(`http://localhost:5048/api/files/by-topic/${topic.id}`);
+      const filesData = await safeJson(filesResponse);
       setFiles(filesData);
-      const testsData = await fetch(`http://localhost:5048/api/test-generation/saved/${topic.id}`).then(res => res.json());
+  
+      const testsResponse = await fetch(`http://localhost:5048/api/test-generation/saved/${topic.id}`);
+      const testsData = await safeJson(testsResponse);
       setSavedTests(testsData);
-      const dictionariesData = await fetch(`http://localhost:5048/api/dictionary-generation/saved/${topic.id}`).then(res => res.json());
+  
+      const dictionariesResponse = await fetch(`http://localhost:5048/api/dictionary-generation/saved/${topic.id}`);
+      const dictionariesData = await safeJson(dictionariesResponse);
       setSavedDictionaries(dictionariesData);
-      const fullTestsData = await fetch(`http://localhost:5048/api/fulltests/by-topic/${topic.id}`).then(res => res.json());
-      setFullTests(fullTestsData);
+  
+      const fullTestsResponse = await fetch(`http://localhost:5048/api/fulltests/by-topic/${topic.id}`);
+      const fullTestsData = await safeJson(fullTestsResponse);
+  
+      const testsWithResults = await Promise.all(
+        fullTestsData.map(async (test) => {
+          const resultResponse = await fetch(`http://localhost:5048/api/fulltests/last-result/${test.id}?userId=${localStorage.getItem("userId")}`);
+          if (!resultResponse.ok) return { ...test, lastResult: null };
+  
+          const text = await resultResponse.text();
+          const resultData = text ? JSON.parse(text) : null;
+          return { ...test, lastResult: resultData };
+        })
+      );
+  
+      setFullTests(testsWithResults);
+  
     } catch (error) {
       console.error("Помилка завантаження даних:", error);
     }
   };
+  
+
+  
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -208,7 +243,10 @@ function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
     if (!confirmed) return;
   
     try {
-      const response = await fetch(`http://localhost:5048/api/fulltests/extract-text-from-saved/${encodeURIComponent(testName)}.txt`);
+      const response = await fetch(`http://localhost:5048/api/fulltests/extract-text-from-saved/${encodeURIComponent(testName)}`); // 🛠️ исправлено
+      if (!response.ok) {
+        throw new Error("Файл не знайдено на сервері");
+      }
       const data = await response.json();
       const text = data.text;
   
@@ -226,15 +264,43 @@ function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
       if (!createResponse.ok) throw new Error("Не вдалося створити FullTest");
   
       const newTest = await createResponse.json();
-  
-      // 🟣 ВСТАВ СЮДИ:
-      newTest.testName = ""; // ⬅️ очищаємо ім'я перед передачею в редактор
-      //alert("Повний тест створено! Переходимо до редагування...");
-      onEditTest(newTest); // передаємо об'єкт, НЕ id
+      newTest.testName = ""; // очищаем имя перед редактированием
+      onEditTest(newTest);
   
     } catch (error) {
       console.error("Помилка при створенні повного тесту:", error);
       alert("Сталася помилка при створенні повного тесту");
+    }
+  };
+  
+  const handleDownloadXml = async (testName) => {
+    try {
+      const response = await fetch(`http://localhost:5048/api/fulltests/extract-text-from-saved/${encodeURIComponent(testName)}`);
+      if (!response.ok) throw new Error("Файл не знайдено");
+  
+      const data = await response.json();
+      const text = data.text;
+  
+      const xmlResponse = await fetch("http://localhost:5048/api/moodle-export/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(text),
+      });
+  
+      if (!xmlResponse.ok) throw new Error("Помилка генерації XML");
+  
+      const blob = await xmlResponse.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${testName}.xml`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Помилка при завантаженні XML:", error);
+      alert("Помилка при створенні або завантаженні XML");
     }
   };
   
@@ -265,13 +331,26 @@ function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
           <h1 className="title">{topic.topicName}</h1>
           <h2>Повноцінні тести</h2>
             <div className="test-list">
-              {fullTests.map((test) => (
-                <div className="test-card" key={test.id}>
-                  <div>
-                    <strong>{test.testName}</strong>
-                    <div className="subhead">FullTest</div>
-                  </div>
-                  <div>
+            {fullTests.map((test) => (
+              <div className="test-card" key={test.id}>
+              <div>
+                <strong>{test.testName}</strong>
+                <div style={{ marginTop: "5px", fontSize: "14px", color: "#555" }}>
+                  {test.lastResult ? (
+                    <>
+                      Ваш бал: {test.lastResult.score?.toFixed(1)} із {test.lastResult.maxScore?.toFixed(1)}
+                      <br />
+                      Оцінка: {test.lastResult.percentage}%
+                    </>
+                  ) : (
+                    <>Тест ще не пройдений</>
+                  )}
+                </div>
+              </div>
+            
+              <div>
+                {localStorage.getItem("role") === "Teacher" && (
+                  <>
                     <button className="icon" onClick={() => onEditTest(test.id)}>✏️</button>
                     <button className="icon" onClick={async () => {
                       const confirmed = window.confirm("Видалити цей повноцінний тест?");
@@ -279,11 +358,13 @@ function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
                       await fetch(`http://localhost:5048/api/fulltests/${test.id}`, { method: "DELETE" });
                       fetchSavedFiles();
                     }}>🗑️</button>
-                  </div>
-                </div>
-              ))}
+                  </>
+                )}
+                <button className="icon" onClick={() => onPassTest(test.id)}>📝</button>
+              </div>
+            </div>            
+            ))}
             </div>
-
 
           <h2>Збережені тести</h2>
           <div className="test-list">
@@ -291,10 +372,10 @@ function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
               <div className="test-card" key={test.id}>
                 <div>
                   <strong>{test.testName}</strong>
-                  <div className="subhead">Subhead</div>
                 </div>
                 <div>
-                  <button className="icon" onClick={() => handleDownloadSaved(test.testName, "tests")}>⬇️</button>
+                  <button className="icon" onClick={() => handleDownloadSaved(test.testName, "tests")}>⬇️  TXT</button>
+                  <button className="icon" onClick={() => handleDownloadXml(test.testName)}>⬇️  XML</button>
                   <button className="icon" onClick={() => onEdit({ name: test.testName, type: "tests" })}>✏️</button>
                   <button className="icon" onClick={() => handleDeleteSaved(test.testName, "tests")}>🗑️</button>
                   <button className="icon" onClick={() => createFullTestFromSaved(test.testName)}>
@@ -312,7 +393,6 @@ function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
               <div className="test-card" key={dictionary.id}>
                 <div>
                   <strong>{dictionary.dictionaryName}</strong>
-                  <div className="subhead">Subhead</div>
                 </div>
                 <div>
                   <button className="icon" onClick={() => handleDownloadSaved(dictionary.dictionaryName, "dictionaries")}>⬇️</button>

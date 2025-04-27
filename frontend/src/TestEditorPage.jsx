@@ -1,41 +1,35 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 
-function TestEditorPage({ test, onBack }) {
+function TestEditorPage({ test, onBack, onViewHistory  }) {
   const [testText, setTestText] = useState("");
   const [questions, setQuestions] = useState([]);
   const [maxScore, setMaxScore] = useState(0);
   const [showNameModal, setShowNameModal] = useState(false);
-  console.log("showNameModal:", showNameModal);
   const [tempName, setTempName] = useState("");
   const [testId, setTestId] = useState(null);
 
-
-
   useEffect(() => {
     if (test) {
-      setTestId(test.id);
-      setTestText(test.text || "");
-      setTempName(test.testName || ""); // залишаємо
-    if (!test.testName || test.testName.trim() === "") {
-    setShowNameModal(true); // ❌ ВИДАЛИ або закоментуй, якщо він у тебе є
-    }
-
-  
-      if (!test.testName || test.testName.trim() === "") {
-        setShowNameModal(true); // ← відкриваємо одразу!
+      if (typeof test.id === "string") {
+        const parts = test.id.split(":");
+        setTestId(parseInt(parts[0], 10)); 
+      } else {
+        setTestId(test.id);
       }
-  
+      setTestText(test.text || "");
+      setTempName(test.testName || "");
+
+      if (!test.testName || test.testName.trim() === "") {
+        setShowNameModal(true);
+      }
+
       if (Array.isArray(test.questions)) {
         setQuestions(test.questions);
         calculateMaxScore(test.questions);
       }
     }
   }, [test]);
-  
-  
-  
-  
 
   const calculateMaxScore = (questionsList) => {
     let score = 0;
@@ -50,7 +44,7 @@ function TestEditorPage({ test, onBack }) {
   const handleAddQuestion = () => {
     const newQuestion = {
       questionText: "",
-      answerOptions: []
+      answerOptions: [],
     };
     const updated = [...questions, newQuestion];
     setQuestions(updated);
@@ -77,39 +71,36 @@ function TestEditorPage({ test, onBack }) {
   };
 
   const handleSave = async () => {
-    if (!testText || testText.trim() === "") {
+    if (!testText.trim()) {
       alert("Текст тесту не може бути порожнім.");
       return;
     }
-  
-    if (!tempName || tempName.trim() === "") {
-      setShowNameModal(true); 
+
+    if (!tempName.trim()) {
+      setShowNameModal(true);
       return;
     }
-  
+
     const fullTest = {
-      id: testId,
+      id: parseInt(testId, 10),
       testName: tempName,
       text: testText,
-      questions: questions
+      questions: questions,
     };
-  
-    const response = await fetch(`http://localhost:5048/api/fulltests/${testId}`, {
+
+    const response = await fetch(`http://localhost:5048/api/fulltests/${fullTest.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(fullTest),
     });
-  
+
     if (response.ok) {
       alert("Тест збережено успішно!");
     } else {
       alert("Помилка при збереженні тесту");
     }
   };
-  
-  
 
-  
   const handleModalSave = () => {
     if (!tempName.trim()) {
       alert("Введіть назву тесту");
@@ -118,8 +109,6 @@ function TestEditorPage({ test, onBack }) {
     setShowNameModal(false);
     handleSave();
   };
-  
-  
 
   return (
     <div className="layout">
@@ -155,7 +144,9 @@ function TestEditorPage({ test, onBack }) {
               />
               <ul>
                 {(q.answerOptions || []).map((a, i) => (
-                  <li key={i}>{a.text} ({a.weight})</li>
+                  <li key={i}>
+                    {a.text} ({a.weight})
+                  </li>
                 ))}
               </ul>
               <button className="button" onClick={() => handleAddAnswer(idx)}>
@@ -164,30 +155,32 @@ function TestEditorPage({ test, onBack }) {
             </div>
           ))}
 
-          <button className="button" onClick={handleAddQuestion}>➕ Додати питання</button>
+          <button className="button" onClick={handleAddQuestion}>
+            ➕ Додати питання
+          </button>
 
           <div className="settings">
             <strong>Максимальний бал: {maxScore}</strong>
           </div>
 
           <button className="button" onClick={handleSave}>💾 Зберегти тест</button>
+          <button className="button" onClick={() => onViewHistory(test.id)}>Переглянути історію проходжень</button>
 
-            {showNameModal && (
+
+          {showNameModal && (
             <div className="modal">
-                <div className="modal-content">
+              <div className="modal-content">
                 <h3>Введіть назву тесту</h3>
                 <input
-                    type="text"
-                    value={tempName}
-                    onChange={(e) => setTempName(e.target.value)}
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
                 />
                 <button className="button" onClick={handleModalSave}>Зберегти</button>
                 <button className="button" onClick={() => setShowNameModal(false)}>Скасувати</button>
-                </div>
+              </div>
             </div>
-            )}
-
-
+          )}
         </main>
       </div>
       <footer className="footer">© 2025 AI Test Platform</footer>
