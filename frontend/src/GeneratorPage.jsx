@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
-function GeneratorPage({ topic, onEdit, onBack }) {
+function GeneratorPage({ topic, onEdit, onEditTest, onBack }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileText, setFileText] = useState("");
   const [questionCount, setQuestionCount] = useState("");
@@ -15,6 +15,7 @@ function GeneratorPage({ topic, onEdit, onBack }) {
   const [showModal, setShowModal] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [isSavingTest, setIsSavingTest] = useState(true);
+  const [fullTests, setFullTests] = useState([]);
 
   useEffect(() => {
     if (topic) {
@@ -30,6 +31,8 @@ function GeneratorPage({ topic, onEdit, onBack }) {
       setSavedTests(testsData);
       const dictionariesData = await fetch(`http://localhost:5048/api/dictionary-generation/saved/${topic.id}`).then(res => res.json());
       setSavedDictionaries(dictionariesData);
+      const fullTestsData = await fetch(`http://localhost:5048/api/fulltests/by-topic/${topic.id}`).then(res => res.json());
+      setFullTests(fullTestsData);
     } catch (error) {
       console.error("Помилка завантаження даних:", error);
     }
@@ -200,6 +203,43 @@ function GeneratorPage({ topic, onEdit, onBack }) {
     }
   };
 
+  const createFullTestFromSaved = async (testName) => {
+    const confirmed = window.confirm("Створити повноцінний тест з цього збереженого файлу?");
+    if (!confirmed) return;
+  
+    try {
+      const response = await fetch(`http://localhost:5048/api/fulltests/extract-text-from-saved/${encodeURIComponent(testName)}.txt`);
+      const data = await response.json();
+      const text = data.text;
+  
+      const createResponse = await fetch(`http://localhost:5048/api/fulltests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          testName: testName,
+          text: text,
+          topicId: topic.id,
+          questions: []
+        }),
+      });
+  
+      if (!createResponse.ok) throw new Error("Не вдалося створити FullTest");
+  
+      const newTest = await createResponse.json();
+  
+      // 🟣 ВСТАВ СЮДИ:
+      newTest.testName = ""; // ⬅️ очищаємо ім'я перед передачею в редактор
+      //alert("Повний тест створено! Переходимо до редагування...");
+      onEditTest(newTest); // передаємо об'єкт, НЕ id
+  
+    } catch (error) {
+      console.error("Помилка при створенні повного тесту:", error);
+      alert("Сталася помилка при створенні повного тесту");
+    }
+  };
+  
+  
+
   return (
     <div className="layout">
       <header className="header">AI TEST</header>
@@ -223,6 +263,27 @@ function GeneratorPage({ topic, onEdit, onBack }) {
         </button>
 
           <h1 className="title">{topic.topicName}</h1>
+          <h2>Повноцінні тести</h2>
+            <div className="test-list">
+              {fullTests.map((test) => (
+                <div className="test-card" key={test.id}>
+                  <div>
+                    <strong>{test.testName}</strong>
+                    <div className="subhead">FullTest</div>
+                  </div>
+                  <div>
+                    <button className="icon" onClick={() => onEditTest(test.id)}>✏️</button>
+                    <button className="icon" onClick={async () => {
+                      const confirmed = window.confirm("Видалити цей повноцінний тест?");
+                      if (!confirmed) return;
+                      await fetch(`http://localhost:5048/api/fulltests/${test.id}`, { method: "DELETE" });
+                      fetchSavedFiles();
+                    }}>🗑️</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
 
           <h2>Збережені тести</h2>
           <div className="test-list">
@@ -236,6 +297,10 @@ function GeneratorPage({ topic, onEdit, onBack }) {
                   <button className="icon" onClick={() => handleDownloadSaved(test.testName, "tests")}>⬇️</button>
                   <button className="icon" onClick={() => onEdit({ name: test.testName, type: "tests" })}>✏️</button>
                   <button className="icon" onClick={() => handleDeleteSaved(test.testName, "tests")}>🗑️</button>
+                  <button className="icon" onClick={() => createFullTestFromSaved(test.testName)}>
+                    🧩
+                  </button>
+
                 </div>
               </div>
             ))}
