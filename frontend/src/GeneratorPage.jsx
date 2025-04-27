@@ -41,7 +41,11 @@ function GeneratorPage({ topic, onEdit, onEditTest, onPassTest, onBack }) {
       const filesData = await safeJson(filesResponse);
       setFiles(filesData);
   
-      const testsResponse = await fetch(`http://localhost:5048/api/test-generation/saved/${topic.id}`);
+      const testsResponse = await fetch(`http://localhost:5048/api/test-generation/saved/${topic.id}`, {
+        headers: {
+          "UserId": localStorage.getItem("userId")
+        }
+      });
       const testsData = await safeJson(testsResponse);
       setSavedTests(testsData);
   
@@ -70,7 +74,6 @@ function GeneratorPage({ topic, onEdit, onEditTest, onPassTest, onBack }) {
     }
   };
   
-
   
 
   const handleFileChange = (event) => {
@@ -145,17 +148,20 @@ function GeneratorPage({ topic, onEdit, onEditTest, onPassTest, onBack }) {
   const handleSave = async () => {
     const endpoint = isSavingTest ? "test-generation" : "dictionary-generation";
     const contentToSave = isSavingTest ? testResult : dictionaryResult;
-
+  
     const response = await fetch(`http://localhost:5048/api/${endpoint}/save`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "UserId": localStorage.getItem("userId")
+      },
       body: JSON.stringify({
         name: saveName,
         content: contentToSave,
         topicId: topic.id,
       }),
     });
-
+  
     if (response.ok) {
       alert("Успішно збережено!");
       setShowModal(false);
@@ -165,7 +171,7 @@ function GeneratorPage({ topic, onEdit, onEditTest, onPassTest, onBack }) {
       alert("Помилка при збереженні!");
     }
   };
-
+  
   const handleDownloadTest = () => {
     const blob = new Blob([testResult], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -304,6 +310,36 @@ function GeneratorPage({ topic, onEdit, onEditTest, onPassTest, onBack }) {
     }
   };
   
+  const handleDownloadDictionaryXml = async (dictionaryName) => {
+    try {
+      const response = await fetch(`http://localhost:5048/api/dictionary-generation/extract-text/${encodeURIComponent(dictionaryName)}`);
+      if (!response.ok) throw new Error("Файл не знайдено");
+  
+      const data = await response.json();
+      const text = data.text;
+  
+      const xmlResponse = await fetch("http://localhost:5048/api/moodle-export/generate-dictionary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(text),
+      });
+  
+      if (!xmlResponse.ok) throw new Error("Помилка генерації XML для словника");
+  
+      const blob = await xmlResponse.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${dictionaryName}.xml`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Помилка при створенні або завантаженні XML словника:", error);
+      alert("Помилка при створенні або завантаженні XML словника");
+    }
+  };
   
 
   return (
@@ -395,9 +431,14 @@ function GeneratorPage({ topic, onEdit, onEditTest, onPassTest, onBack }) {
                   <strong>{dictionary.dictionaryName}</strong>
                 </div>
                 <div>
-                  <button className="icon" onClick={() => handleDownloadSaved(dictionary.dictionaryName, "dictionaries")}>⬇️</button>
-                  <button className="icon" onClick={() => onEdit({ name: dictionary.dictionaryName, type: "dictionaries" })}>✏️</button>
-                  <button className="icon" onClick={() => handleDeleteSaved(dictionary.dictionaryName, "dictionaries")}>🗑️</button>
+                  <button className="icon" onClick={() => handleDownloadDictionaryXml(dictionary.dictionaryName)}>⬇️ XML</button>
+                  <button className="icon" onClick={() => handleDownloadSaved(dictionary.dictionaryName, "dictionaries")}>⬇️ TXT</button>
+                  {localStorage.getItem("role") === "Teacher" && (
+                    <>
+                      <button className="icon" onClick={() => onEdit({ name: dictionary.dictionaryName, type: "dictionaries" })}>✏️</button>
+                      <button className="icon" onClick={() => handleDeleteSaved(dictionary.dictionaryName, "dictionaries")}>🗑️</button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

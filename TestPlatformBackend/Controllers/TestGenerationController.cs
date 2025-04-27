@@ -53,6 +53,12 @@ public class TestGenerationController : ControllerBase
         if (!_context.Topics.Any(t => t.Id == request.TopicId))
             return BadRequest("Тема не знайдена");
 
+        var userIdString = HttpContext.Request.Headers["UserId"].FirstOrDefault();
+        if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+        {
+            return BadRequest("Користувач не знайдений або некоректний UserId");
+        }
+
         var filePath = Path.Combine(_uploadPath, $"{request.Name}.txt");
 
         await System.IO.File.WriteAllTextAsync(filePath, request.Content);
@@ -61,7 +67,8 @@ public class TestGenerationController : ControllerBase
         {
             TestName = request.Name,
             FilePath = filePath,
-            TopicId = request.TopicId
+            TopicId = request.TopicId,
+            UserId = userId   
         };
 
         _context.Tests.Add(savedTest);
@@ -69,6 +76,7 @@ public class TestGenerationController : ControllerBase
 
         return Ok(new { message = "Тест збережено", name = request.Name });
     }
+
 
     [HttpPost("edit")]
     public async Task<IActionResult> EditTest([FromBody] SaveTestRequest request)
@@ -106,12 +114,19 @@ public class TestGenerationController : ControllerBase
     [HttpGet("saved/{topicId}")]
     public async Task<IActionResult> GetSavedTests(int topicId)
     {
+        var userIdString = HttpContext.Request.Headers["UserId"].FirstOrDefault();
+        if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+        {
+            return BadRequest("Користувач не знайдений або некоректний UserId");
+        }
+
         var tests = await _context.Tests
-            .Where(t => t.TopicId == topicId)
+            .Where(t => t.TopicId == topicId && t.UserId == userId) 
             .ToListAsync();
 
         return Ok(tests);
     }
+
 
 }
 

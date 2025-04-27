@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace TestPlatformBackend.Controllers
@@ -10,7 +9,7 @@ namespace TestPlatformBackend.Controllers
     public class MoodleExportController : ControllerBase
     {
         [HttpPost("generate")]
-        public IActionResult GenerateMoodleXml([FromBody] string testText)
+        public IActionResult GenerateMoodleTestXml([FromBody] string testText)
         {
             try
             {
@@ -37,7 +36,7 @@ namespace TestPlatformBackend.Controllers
                 var xmlString = doc.ToString();
 
                 var bytes = Encoding.UTF8.GetBytes(xmlString);
-                return File(bytes, "application/xml", "moodle_questions.xml");
+                return File(bytes, "application/xml", "moodle_test.xml");
             }
             catch (Exception ex)
             {
@@ -45,24 +44,53 @@ namespace TestPlatformBackend.Controllers
             }
         }
 
+
+        [HttpPost("generate-dictionary")]
+        public IActionResult GenerateMoodleDictionaryXml([FromBody] string dictionaryText)
+        {
+            try
+            {
+                var entries = ParseDictionaryText(dictionaryText);
+
+                var glossary = new XElement("glossary",
+                    entries.Select(entry => new XElement("entry",
+                        new XElement("concept", entry.Term),
+                        new XElement("definition", entry.Definition)
+                    ))
+                );
+
+                var doc = new XDocument(new XDeclaration("1.0", "UTF-8", "no"), glossary);
+                var xmlString = doc.ToString();
+
+                var bytes = Encoding.UTF8.GetBytes(xmlString);
+                return File(bytes, "application/xml", "moodle_dictionary.xml");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        
+
         private List<QuestionModel> ParseTestText(string text)
         {
             var questions = new List<QuestionModel>();
 
-            var blocks = Regex.Split(text.Trim(), @"(?=\*\*Запитання\s+\d+:)");
+            var blocks = System.Text.RegularExpressions.Regex.Split(text.Trim(), @"(?=\*\*Запитання\s+\d+:)");
 
             foreach (var block in blocks)
             {
                 if (string.IsNullOrWhiteSpace(block)) continue;
 
-                var titleMatch = Regex.Match(block, @"\*\*Запитання\s+\d+:\*\*\s*(.+?)\s*\*\*", RegexOptions.Singleline);
+                var titleMatch = System.Text.RegularExpressions.Regex.Match(block, @"\*\*Запитання\s+\d+:\*\*\s*(.+?)\s*\*\*", System.Text.RegularExpressions.RegexOptions.Singleline);
                 var title = titleMatch.Success ? titleMatch.Groups[1].Value.Trim() : "Без назви";
 
                 var answers = new List<AnswerModel>();
 
-                var answerMatches = Regex.Matches(block, @"([A-E])\)\s*(.+?)\s*\(([\d\.]+)\)");
+                var answerMatches = System.Text.RegularExpressions.Regex.Matches(block, @"([A-E])\)\s*(.+?)\s*\(([\d\.]+)\)");
 
-                foreach (Match match in answerMatches)
+                foreach (System.Text.RegularExpressions.Match match in answerMatches)
                 {
                     answers.Add(new AnswerModel
                     {
@@ -84,6 +112,30 @@ namespace TestPlatformBackend.Controllers
             return questions;
         }
 
+        private List<DictionaryEntryModel> ParseDictionaryText(string text)
+        {
+            var entries = new List<DictionaryEntryModel>();
+
+            var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var line in lines)
+            {
+                var parts = line.Split(new[] { " - " }, 2, StringSplitOptions.None);
+                if (parts.Length == 2)
+                {
+                    entries.Add(new DictionaryEntryModel
+                    {
+                        Term = parts[0].Trim(),
+                        Definition = parts[1].Trim()
+                    });
+                }
+            }
+
+            return entries;
+        }
+
+        
+
         private class QuestionModel
         {
             public string Title { get; set; }
@@ -95,6 +147,12 @@ namespace TestPlatformBackend.Controllers
         {
             public string Text { get; set; }
             public double Weight { get; set; }
+        }
+
+        private class DictionaryEntryModel
+        {
+            public string Term { get; set; }
+            public string Definition { get; set; }
         }
     }
 }
