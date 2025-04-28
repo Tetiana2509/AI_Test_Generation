@@ -273,6 +273,36 @@ function GeneratorPage({ topic, onEdit, onEditTest, onPassTest, onBack }) {
     }
   };
   
+  const handleDownloadXml = async (testName) => {
+    try {
+      const response = await fetch(`http://localhost:5048/api/fulltests/extract-text-from-saved/${encodeURIComponent(testName)}`);
+      if (!response.ok) throw new Error("Файл не знайдено");
+  
+      const data = await response.json();
+      const text = data.text;
+  
+      const xmlResponse = await fetch("http://localhost:5048/api/moodle-export/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(text),
+      });
+  
+      if (!xmlResponse.ok) throw new Error("Помилка генерації XML");
+  
+      const blob = await xmlResponse.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${testName}.xml`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Помилка при завантаженні XML:", error);
+      alert("Помилка при створенні або завантаженні XML");
+    }
+  };
   
   
 
@@ -344,7 +374,8 @@ function GeneratorPage({ topic, onEdit, onEditTest, onPassTest, onBack }) {
                   <strong>{test.testName}</strong>
                 </div>
                 <div>
-                  <button className="icon" onClick={() => handleDownloadSaved(test.testName, "tests")}>⬇️</button>
+                  <button className="icon" onClick={() => handleDownloadSaved(test.testName, "tests")}>⬇️  TXT</button>
+                  <button className="icon" onClick={() => handleDownloadXml(test.testName)}>⬇️  XML</button>
                   <button className="icon" onClick={() => onEdit({ name: test.testName, type: "tests" })}>✏️</button>
                   <button className="icon" onClick={() => handleDeleteSaved(test.testName, "tests")}>🗑️</button>
                   <button className="icon" onClick={() => createFullTestFromSaved(test.testName)}>
