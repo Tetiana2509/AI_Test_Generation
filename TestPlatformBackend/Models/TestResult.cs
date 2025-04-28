@@ -1,6 +1,4 @@
-﻿using TestPlatformBackend.Models;
-
-namespace TestPlatformBackend.Models
+﻿namespace TestPlatformBackend.Models
 {
     public class TestResult
     {
@@ -14,5 +12,7 @@ namespace TestPlatformBackend.Models
 
         public double Score { get; set; }
         public DateTime SubmittedAt { get; set; }
+
+        public List<AnswerSubmission> AnswerSubmissions { get; set; } = new();
     }
 }
