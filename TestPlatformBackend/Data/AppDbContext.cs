@@ -18,9 +18,7 @@ namespace TestPlatformBackend.Data
         public DbSet<Question> Questions { get; set; }
         public DbSet<AnswerOption> AnswerOptions { get; set; }
         public DbSet<TestResult> TestResults { get; set; }
-
-
-
+        public DbSet<AnswerSubmission> AnswerSubmissions { get; set; } // ⬅️ Нове!
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,7 +27,7 @@ namespace TestPlatformBackend.Data
                 .IsUnique();
 
             modelBuilder.Entity<CourseUser>()
-        .HasKey(cu => cu.Id);
+                .HasKey(cu => cu.Id);
 
             modelBuilder.Entity<CourseUser>()
                 .HasOne(cu => cu.User)
@@ -47,32 +45,35 @@ namespace TestPlatformBackend.Data
                 .HasForeignKey(c => c.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // При видаленні FullTest → видаляються всі питання
             modelBuilder.Entity<FullTest>()
                 .HasMany(f => f.Questions)
                 .WithOne(q => q.FullTest)
                 .HasForeignKey(q => q.FullTestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // При видаленні Question → видаляються всі варіанти
             modelBuilder.Entity<Question>()
                 .HasMany(q => q.AnswerOptions)
                 .WithOne(a => a.Question)
                 .HasForeignKey(a => a.QuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // При видаленні FullTest → видаляються результати студентів
             modelBuilder.Entity<FullTest>()
                 .HasMany(f => f.TestResults)
                 .WithOne(r => r.FullTest)
                 .HasForeignKey(r => r.FullTestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // При видаленні User → видаляються його результати тестів 
             modelBuilder.Entity<User>()
                 .HasMany(u => u.TestResults)
                 .WithOne(r => r.User)
                 .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // 🔵 НОВЕ: При видаленні результату тесту — видаляються його відповіді
+            modelBuilder.Entity<TestResult>()
+                .HasMany(r => r.AnswerSubmissions)
+                .WithOne(a => a.TestResult)
+                .HasForeignKey(a => a.TestResultId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             base.OnModelCreating(modelBuilder);
