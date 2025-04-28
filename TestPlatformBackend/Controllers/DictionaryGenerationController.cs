@@ -108,6 +108,20 @@ public class DictionaryGenerationController : ControllerBase
         return Ok(dictionaries);
     }
 
+    [HttpGet("extract-text/{fileName}")]
+    public IActionResult ExtractDictionaryText(string fileName)
+    {
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SavedDictionaries", $"{fileName}.txt");
+
+        if (!System.IO.File.Exists(filePath))
+            return NotFound("Файл не знайдено");
+
+        var text = System.IO.File.ReadAllText(filePath);
+
+        return Ok(new { text });
+    }
+
+
 }
 
 public class DictionaryRequest

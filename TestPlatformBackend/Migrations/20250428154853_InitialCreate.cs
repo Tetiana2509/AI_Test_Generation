@@ -164,7 +164,8 @@ namespace TestPlatformBackend.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     TestName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TopicId = table.Column<int>(type: "int", nullable: false)
+                    TopicId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -173,6 +174,12 @@ namespace TestPlatformBackend.Migrations
                         name: "FK_Tests_Topics_TopicId",
                         column: x => x.TopicId,
                         principalTable: "Topics",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Tests_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -247,10 +254,36 @@ namespace TestPlatformBackend.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "AnswerSubmissions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TestResultId = table.Column<int>(type: "int", nullable: false),
+                    QuestionId = table.Column<int>(type: "int", nullable: false),
+                    AnswerOptionId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnswerSubmissions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AnswerSubmissions_TestResults_TestResultId",
+                        column: x => x.TestResultId,
+                        principalTable: "TestResults",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AnswerOptions_QuestionId",
                 table: "AnswerOptions",
                 column: "QuestionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AnswerSubmissions_TestResultId",
+                table: "AnswerSubmissions",
+                column: "TestResultId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Courses_CreatedByUserId",
@@ -310,6 +343,11 @@ namespace TestPlatformBackend.Migrations
                 column: "TopicId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Tests_UserId",
+                table: "Tests",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Topics_CourseId",
                 table: "Topics",
                 column: "CourseId");
@@ -322,6 +360,9 @@ namespace TestPlatformBackend.Migrations
                 name: "AnswerOptions");
 
             migrationBuilder.DropTable(
+                name: "AnswerSubmissions");
+
+            migrationBuilder.DropTable(
                 name: "CourseUsers");
 
             migrationBuilder.DropTable(
@@ -331,13 +372,13 @@ namespace TestPlatformBackend.Migrations
                 name: "Files");
 
             migrationBuilder.DropTable(
-                name: "TestResults");
-
-            migrationBuilder.DropTable(
                 name: "Tests");
 
             migrationBuilder.DropTable(
                 name: "Questions");
+
+            migrationBuilder.DropTable(
+                name: "TestResults");
 
             migrationBuilder.DropTable(
                 name: "FullTests");
