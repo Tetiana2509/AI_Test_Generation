@@ -1,9 +1,12 @@
 ﻿using System;
 
-public class Topic
+namespace TestPlatformBackend.Models
 {
-    public int Id { get; set; }
-    public string TopicName { get; set; } = string.Empty;
-    public int CourseId { get; set; }
-    public Course? Course { get; set; }
+    public class Topic
+    {
+        public int Id { get; set; }
+        public string TopicName { get; set; } = string.Empty;
+        public int CourseId { get; set; }
+        public Course? Course { get; set; }
+    }
 }

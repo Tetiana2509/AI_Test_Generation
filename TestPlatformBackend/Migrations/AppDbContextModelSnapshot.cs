@@ -22,7 +22,36 @@ namespace TestPlatformBackend.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Course", b =>
+            modelBuilder.Entity("TestPlatformBackend.Models.AnswerOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AnswerText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Weight")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("AnswerOptions");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.Course", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -44,7 +73,7 @@ namespace TestPlatformBackend.Migrations
                     b.ToTable("Courses");
                 });
 
-            modelBuilder.Entity("CourseUser", b =>
+            modelBuilder.Entity("TestPlatformBackend.Models.CourseUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -96,6 +125,54 @@ namespace TestPlatformBackend.Migrations
                     b.HasIndex("TopicId");
 
                     b.ToTable("Files");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.FullTest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("TestName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TopicId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TopicId");
+
+                    b.ToTable("FullTests");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.Question", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FullTestId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FullTestId");
+
+                    b.ToTable("Questions");
                 });
 
             modelBuilder.Entity("TestPlatformBackend.Models.SavedDictionary", b =>
@@ -150,7 +227,36 @@ namespace TestPlatformBackend.Migrations
                     b.ToTable("Tests");
                 });
 
-            modelBuilder.Entity("Topic", b =>
+            modelBuilder.Entity("TestPlatformBackend.Models.TestResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FullTestId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Score")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FullTestId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TestResults");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.Topic", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -172,7 +278,7 @@ namespace TestPlatformBackend.Migrations
                     b.ToTable("Topics");
                 });
 
-            modelBuilder.Entity("User", b =>
+            modelBuilder.Entity("TestPlatformBackend.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -201,9 +307,20 @@ namespace TestPlatformBackend.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Course", b =>
+            modelBuilder.Entity("TestPlatformBackend.Models.AnswerOption", b =>
                 {
-                    b.HasOne("User", "CreatedByUser")
+                    b.HasOne("TestPlatformBackend.Models.Question", "Question")
+                        .WithMany("AnswerOptions")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.Course", b =>
+                {
+                    b.HasOne("TestPlatformBackend.Models.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -212,15 +329,15 @@ namespace TestPlatformBackend.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
-            modelBuilder.Entity("CourseUser", b =>
+            modelBuilder.Entity("TestPlatformBackend.Models.CourseUser", b =>
                 {
-                    b.HasOne("Course", "Course")
+                    b.HasOne("TestPlatformBackend.Models.Course", "Course")
                         .WithMany("CourseUsers")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("User", "User")
+                    b.HasOne("TestPlatformBackend.Models.User", "User")
                         .WithMany("CourseUsers")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -233,7 +350,7 @@ namespace TestPlatformBackend.Migrations
 
             modelBuilder.Entity("TestPlatformBackend.Models.FileUpload", b =>
                 {
-                    b.HasOne("Topic", "Topic")
+                    b.HasOne("TestPlatformBackend.Models.Topic", "Topic")
                         .WithMany()
                         .HasForeignKey("TopicId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -242,9 +359,29 @@ namespace TestPlatformBackend.Migrations
                     b.Navigation("Topic");
                 });
 
+            modelBuilder.Entity("TestPlatformBackend.Models.FullTest", b =>
+                {
+                    b.HasOne("TestPlatformBackend.Models.Topic", "Topic")
+                        .WithMany()
+                        .HasForeignKey("TopicId");
+
+                    b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.Question", b =>
+                {
+                    b.HasOne("TestPlatformBackend.Models.FullTest", "FullTest")
+                        .WithMany("Questions")
+                        .HasForeignKey("FullTestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FullTest");
+                });
+
             modelBuilder.Entity("TestPlatformBackend.Models.SavedDictionary", b =>
                 {
-                    b.HasOne("Topic", "Topic")
+                    b.HasOne("TestPlatformBackend.Models.Topic", "Topic")
                         .WithMany()
                         .HasForeignKey("TopicId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -255,7 +392,7 @@ namespace TestPlatformBackend.Migrations
 
             modelBuilder.Entity("TestPlatformBackend.Models.SavedTest", b =>
                 {
-                    b.HasOne("Topic", "Topic")
+                    b.HasOne("TestPlatformBackend.Models.Topic", "Topic")
                         .WithMany()
                         .HasForeignKey("TopicId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -264,9 +401,28 @@ namespace TestPlatformBackend.Migrations
                     b.Navigation("Topic");
                 });
 
-            modelBuilder.Entity("Topic", b =>
+            modelBuilder.Entity("TestPlatformBackend.Models.TestResult", b =>
                 {
-                    b.HasOne("Course", "Course")
+                    b.HasOne("TestPlatformBackend.Models.FullTest", "FullTest")
+                        .WithMany("TestResults")
+                        .HasForeignKey("FullTestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TestPlatformBackend.Models.User", "User")
+                        .WithMany("TestResults")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FullTest");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.Topic", b =>
+                {
+                    b.HasOne("TestPlatformBackend.Models.Course", "Course")
                         .WithMany("Topics")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -275,16 +431,30 @@ namespace TestPlatformBackend.Migrations
                     b.Navigation("Course");
                 });
 
-            modelBuilder.Entity("Course", b =>
+            modelBuilder.Entity("TestPlatformBackend.Models.Course", b =>
                 {
                     b.Navigation("CourseUsers");
 
                     b.Navigation("Topics");
                 });
 
-            modelBuilder.Entity("User", b =>
+            modelBuilder.Entity("TestPlatformBackend.Models.FullTest", b =>
+                {
+                    b.Navigation("Questions");
+
+                    b.Navigation("TestResults");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.Question", b =>
+                {
+                    b.Navigation("AnswerOptions");
+                });
+
+            modelBuilder.Entity("TestPlatformBackend.Models.User", b =>
                 {
                     b.Navigation("CourseUsers");
+
+                    b.Navigation("TestResults");
                 });
 #pragma warning restore 612, 618
         }

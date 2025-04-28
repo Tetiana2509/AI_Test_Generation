@@ -12,8 +12,8 @@ using TestPlatformBackend.Data;
 namespace TestPlatformBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250426131408_MakeTopicNullableInFullTest")]
-    partial class MakeTopicNullableInFullTest
+    [Migration("20250428101843_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -146,7 +146,7 @@ namespace TestPlatformBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TopicId")
+                    b.Property<int?>("TopicId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -366,9 +366,7 @@ namespace TestPlatformBackend.Migrations
                 {
                     b.HasOne("TestPlatformBackend.Models.Topic", "Topic")
                         .WithMany()
-                        .HasForeignKey("TopicId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TopicId");
 
                     b.Navigation("Topic");
                 });
