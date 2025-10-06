@@ -15,7 +15,7 @@ public class TestGenerationController : ControllerBase
 
     public TestGenerationController(AppDbContext context)
     {
-        _testGenerator = new TestGenerator("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");
+        _testGenerator = new TestGenerator("OPENAI_API_KEY");
         _context = context;
         if (!Directory.Exists(_uploadPath))
             Directory.CreateDirectory(_uploadPath);
